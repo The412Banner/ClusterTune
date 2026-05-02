@@ -1,9 +1,9 @@
-package com.aure.androidtuner.boot
+package com.aure.clustertune.boot
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.aure.androidtuner.AppContainer
+import com.aure.clustertune.AppContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -19,7 +19,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
             try {
                 val container = AppContainer(context)
                 val settings = container.settingsStorage.settings.first()
-                if (!settings.applyLastPresetOnBoot) {
+                if (!settings.applyLastProfileOnBoot) {
                     return@launch
                 }
                 container.repository.applyPersistedLastValuesOnBoot()

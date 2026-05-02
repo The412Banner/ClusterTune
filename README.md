@@ -105,3 +105,7 @@ ClusterTune is distributed under the terms of the GNU General Public License v2.
 The RootExec / PServer command execution code in this project is based on code from
 [O2P Tweaks](https://github.com/FeralAI/o2ptweaks.app) by FeralAI, which is also
 licensed under the GNU General Public License v2.0.
+
+## AI Assistance Disclosure
+
+I used AI assistance while building this project. Software development is my day job, and I reviewed the code throughout the process. I understand how the app works and what it does.

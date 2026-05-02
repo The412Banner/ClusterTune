@@ -1,18 +1,18 @@
-package com.aure.androidtuner.ui
+package com.aure.clustertune.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.aure.androidtuner.data.PerformanceRepository
-import com.aure.androidtuner.data.SettingsStorage
-import com.aure.androidtuner.model.AppColorSource
-import com.aure.androidtuner.model.AppSettings
-import com.aure.androidtuner.model.CpuPolicyInfo
-import com.aure.androidtuner.model.PerformanceProfile
-import com.aure.androidtuner.model.PresetStateResolver
-import com.aure.androidtuner.model.ProfileSource
-import com.aure.androidtuner.model.TileInteractionBehavior
-import com.aure.androidtuner.model.TunerState
+import com.aure.clustertune.data.PerformanceRepository
+import com.aure.clustertune.data.SettingsStorage
+import com.aure.clustertune.model.AppColorSource
+import com.aure.clustertune.model.AppSettings
+import com.aure.clustertune.model.CpuPolicyInfo
+import com.aure.clustertune.model.PerformanceProfile
+import com.aure.clustertune.model.ProfileStateResolver
+import com.aure.clustertune.model.ProfileSource
+import com.aure.clustertune.model.TileInteractionBehavior
+import com.aure.clustertune.model.TunerState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +36,7 @@ class TunerViewModel(
         transientMessage,
         transientError,
     ) { repoState, localEdits, message, error ->
-        PresetStateResolver.resolve(
+        ProfileStateResolver.resolve(
             repoState.copy(
                 statusMessage = message,
                 errorMessage = error,
@@ -69,7 +69,7 @@ class TunerViewModel(
         val selectedProfile = state.value.displayProfiles
             .firstOrNull { it.id == state.value.selectedProfileId }
 
-        if (selectedProfile != null && !PresetStateResolver.matchesProfile(pendingValues, selectedProfile)) {
+        if (selectedProfile != null && !ProfileStateResolver.matchesProfile(pendingValues, selectedProfile)) {
             viewModelScope.launch {
                 repository.selectProfile(null)
             }
@@ -79,7 +79,7 @@ class TunerViewModel(
     fun applyProfile(profile: PerformanceProfile) {
         edits.value = edits.value + profile.maxFrequencies
         viewModelScope.launch {
-            repository.selectProfile(profile.id.takeUnless { it == PresetStateResolver.STOCK_PROFILE_ID })
+            repository.selectProfile(profile.id.takeUnless { it == ProfileStateResolver.STOCK_PROFILE_ID })
         }
     }
 
@@ -95,13 +95,13 @@ class TunerViewModel(
 
         viewModelScope.launch {
             val appliedProfile = state.displayProfiles.firstOrNull { profile ->
-                PresetStateResolver.matchesProfile(state.currentValues, profile)
+                ProfileStateResolver.matchesProfile(state.currentValues, profile)
             }
             val applyResult = repository.applyValues(
                 policies = state.policies,
                 selectedValues = state.currentValues,
-                isReset = appliedProfile?.id == PresetStateResolver.STOCK_PROFILE_ID,
-                appliedDisplayProfileId = appliedProfile?.id ?: PresetStateResolver.MANUAL_PROFILE_ID,
+                isReset = appliedProfile?.id == ProfileStateResolver.STOCK_PROFILE_ID,
+                appliedDisplayProfileId = appliedProfile?.id ?: ProfileStateResolver.MANUAL_PROFILE_ID,
             )
             applyResult.onSuccess { outcome ->
                 edits.value = emptyMap()
@@ -118,24 +118,24 @@ class TunerViewModel(
                 transientError.value = throwable.message ?: "Failed to apply limits"
             }
             if (applyResult.isSuccess) {
-                repository.selectProfile(appliedProfile?.id?.takeUnless { it == PresetStateResolver.STOCK_PROFILE_ID })
+                repository.selectProfile(appliedProfile?.id?.takeUnless { it == ProfileStateResolver.STOCK_PROFILE_ID })
             }
         }
     }
 
-    fun createUserPreset(name: String, state: TunerState) {
+    fun createUserProfile(name: String, state: TunerState) {
         val trimmedName = name.trim()
         if (trimmedName.isBlank()) {
-            transientError.value = "Preset name is required"
+            transientError.value = "Profile name is required"
             return
         }
         viewModelScope.launch {
-            if (hasDuplicatePresetName(trimmedName, excludedId = null, state = state)) {
-                transientError.value = "Preset name already exists"
+            if (hasDuplicateProfileName(trimmedName, excludedId = null, state = state)) {
+                transientError.value = "Profile name already exists"
                 return@launch
             }
-            repository.createUserPreset(trimmedName, state.currentValues)
-            transientMessage.value = "Saved preset \"$trimmedName\""
+            repository.createUserProfile(trimmedName, state.currentValues)
+            transientMessage.value = "Saved profile \"$trimmedName\""
             transientError.value = null
         }
     }
@@ -143,24 +143,24 @@ class TunerViewModel(
     fun updateProfile(profileId: String, name: String, state: TunerState) {
         val trimmedName = name.trim()
         if (trimmedName.isBlank()) {
-            transientError.value = "Preset name is required"
+            transientError.value = "Profile name is required"
             return
         }
         viewModelScope.launch {
-            if (hasDuplicatePresetName(trimmedName, excludedId = profileId, state = state)) {
-                transientError.value = "Preset name already exists"
+            if (hasDuplicateProfileName(trimmedName, excludedId = profileId, state = state)) {
+                transientError.value = "Profile name already exists"
                 return@launch
             }
             repository.updateProfile(profileId, trimmedName, state.currentValues)
-            transientMessage.value = "Updated preset \"$trimmedName\""
+            transientMessage.value = "Updated profile \"$trimmedName\""
             transientError.value = null
         }
     }
 
-    fun deletePreset(profileId: String) {
+    fun deleteProfile(profileId: String) {
         viewModelScope.launch {
             repository.deleteProfile(profileId)
-            transientMessage.value = "Deleted preset"
+            transientMessage.value = "Deleted profile"
             transientError.value = null
         }
     }
@@ -174,7 +174,7 @@ class TunerViewModel(
     fun resetProfilesToDefault() {
         viewModelScope.launch {
             repository.resetProfilesToDefault()
-            transientMessage.value = "Restored bundled presets and removed custom presets"
+            transientMessage.value = "Restored bundled profiles and removed custom profiles"
             transientError.value = null
         }
     }
@@ -186,9 +186,9 @@ class TunerViewModel(
     suspend fun importProfilesJson(rawJson: String): Int {
         val importedCount = repository.importProfilesJson(rawJson)
         transientMessage.value = if (importedCount == 1) {
-            "Imported 1 preset"
+            "Imported 1 profile"
         } else {
-            "Imported $importedCount presets"
+            "Imported $importedCount profiles"
         }
         transientError.value = null
         return importedCount
@@ -206,9 +206,9 @@ class TunerViewModel(
         }
     }
 
-    fun setApplyLastPresetOnBoot(enabled: Boolean) {
+    fun setApplyLastProfileOnBoot(enabled: Boolean) {
         viewModelScope.launch {
-            settingsStorage.persistApplyLastPresetOnBoot(enabled)
+            settingsStorage.persistApplyLastProfileOnBoot(enabled)
         }
     }
 
@@ -237,7 +237,7 @@ class TunerViewModel(
             ?: rawValue
     }
 
-    private fun hasDuplicatePresetName(
+    private fun hasDuplicateProfileName(
         name: String,
         excludedId: String?,
         state: TunerState,
@@ -254,9 +254,9 @@ class TunerViewModel(
         commandOutput: String?,
     ): String {
         val base = if (appliedProfile != null) {
-            "Applied preset: ${appliedProfile.name}"
+            "Applied profile: ${appliedProfile.name}"
         } else {
-            "Applied preset: Manual"
+            "Applied profile: Manual"
         }
         return commandOutput?.takeIf { it.isNotBlank() }?.let { "$base | log: ${it.take(120)}" } ?: base
     }
@@ -269,7 +269,7 @@ class TunerViewModel(
         val summary = state.policies.joinToString(", ") { policy ->
             val requested = state.currentValues[policy.id] ?: policy.currentMaxFreq
             val actual = actualValues[policy.id] ?: policy.currentMaxFreq
-            "P${policy.id} requested ${formatFrequency(requested)}, actual ${formatFrequency(actual)}"
+            "C${policy.id} requested ${formatFrequency(requested)}, actual ${formatFrequency(actual)}"
         }
         val base = "Apply did not stick: $summary"
         return commandOutput?.takeIf { it.isNotBlank() }?.let { "$base | log: ${it.take(120)}" } ?: base

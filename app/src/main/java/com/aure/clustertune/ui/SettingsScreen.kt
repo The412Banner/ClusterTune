@@ -1,4 +1,4 @@
-package com.aure.androidtuner.ui
+package com.aure.clustertune.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
@@ -32,9 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.aure.androidtuner.model.AppColorSource
-import com.aure.androidtuner.model.AppSettings
-import com.aure.androidtuner.model.TileInteractionBehavior
+import com.aure.clustertune.model.AppColorSource
+import com.aure.clustertune.model.AppSettings
+import com.aure.clustertune.model.TileInteractionBehavior
 
 private val accentColorOptions = listOf(
     0xFF3F51B5.toInt(),
@@ -53,10 +55,13 @@ fun SettingsScreen(
     onAccentColorChange: (Int) -> Unit,
     onTileTapBehaviorChange: (TileInteractionBehavior) -> Unit,
     onTileLongPressBehaviorChange: (TileInteractionBehavior) -> Unit,
-    onApplyLastPresetOnBootChange: (Boolean) -> Unit,
+    onApplyLastProfileOnBootChange: (Boolean) -> Unit,
     onResetProfiles: () -> Unit,
-    onExportPresets: () -> Unit,
-    onImportPresets: () -> Unit,
+    onExportProfiles: () -> Unit,
+    onImportProfiles: () -> Unit,
+    onRequestAddQuickSettingsTile: () -> Unit,
+    canRequestAddQuickSettingsTile: Boolean,
+    isQuickSettingsTileAdded: Boolean,
 ) {
     var showResetConfirmation by remember { mutableStateOf(false) }
 
@@ -79,54 +84,57 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                 )
-                Text(
-                    text = "Quick settings tile behavior and preset defaults.",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
             }
             TextButton(onClick = onBack) {
                 Text("Done")
             }
         }
 
-        SettingsSection(title = "Colors") {
+        SettingsSection(title = "Appearance") {
             ThemeModeSelector(
                 selected = settings.colorSource,
                 onChange = onColorSourceChange,
+                selectedAccentColor = settings.accentColor,
+                onAccentColorChange = onAccentColorChange,
             )
-            if (settings.colorSource == AppColorSource.CUSTOM_ACCENT) {
+        }
+
+        SettingsSection(title = "Quick Settings Tile") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = "Accent color",
+                    text = "Add ClusterTune to Quick Settings",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                TextButton(
+                    onClick = onRequestAddQuickSettingsTile,
+                    enabled = canRequestAddQuickSettingsTile && !isQuickSettingsTileAdded,
                 ) {
-                    accentColorOptions.forEach { accentColor ->
-                        AccentSwatch(
-                            color = Color(accentColor),
-                            selected = settings.accentColor == accentColor,
-                            onClick = { onAccentColorChange(accentColor) },
-                        )
-                    }
+                    Text(
+                        when {
+                            isQuickSettingsTileAdded -> "Tile already added"
+                            canRequestAddQuickSettingsTile -> "Add tile"
+                            else -> "Unavailable"
+                        },
+                    )
                 }
             }
-        }
-
-        SettingsSection(title = "Single Tap On Tile") {
-            TileBehaviorSelector(
-                selected = settings.tileTapBehavior,
-                onChange = onTileTapBehaviorChange,
-            )
-        }
-
-        SettingsSection(title = "Long Press On Tile") {
-            TileBehaviorSelector(
-                selected = settings.tileLongPressBehavior,
-                onChange = onTileLongPressBehaviorChange,
-            )
+            SettingsControlGroup(label = "Single tap") {
+                TileBehaviorSelector(
+                    selected = settings.tileTapBehavior,
+                    onChange = onTileTapBehaviorChange,
+                )
+            }
+            SettingsControlGroup(label = "Long press") {
+                TileBehaviorSelector(
+                    selected = settings.tileLongPressBehavior,
+                    onChange = onTileLongPressBehaviorChange,
+                )
+            }
         }
 
         SettingsSection(title = "Startup") {
@@ -140,57 +148,77 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = "Apply last preset on device boot",
+                        text = "Apply last profile on device boot",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "When enabled, the app will attempt to restore the last applied preset after boot.",
+                        text = "When enabled, the app will attempt to restore the last applied profile after boot.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
                 Switch(
-                    checked = settings.applyLastPresetOnBoot,
-                    onCheckedChange = onApplyLastPresetOnBootChange,
+                    checked = settings.applyLastProfileOnBoot,
+                    onCheckedChange = onApplyLastProfileOnBootChange,
                 )
             }
         }
 
-        SettingsSection(title = "Presets") {
-            Text(
-                text = "Share presets",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Export presets to JSON or import a shared preset file.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+        SettingsSection(title = "Profiles") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                TextButton(onClick = onImportPresets) {
-                    Text("Import")
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "Share profiles",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Export profiles to JSON or import a shared profile file.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
-                TextButton(onClick = onExportPresets) {
-                    Text("Export")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = onImportProfiles) {
+                        Text("Import")
+                    }
+                    TextButton(onClick = onExportProfiles) {
+                        Text("Export")
+                    }
                 }
             }
-            Text(
-                text = "Reset presets to default",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Bundled presets are restored and custom presets are removed.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            TextButton(
-                onClick = { showResetConfirmation = true },
-                modifier = Modifier.align(Alignment.End),
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                Text("Reset")
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = "Reset profiles to default",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Bundled profiles are restored and custom profiles are removed.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                TextButton(onClick = { showResetConfirmation = true }) {
+                    Text("Reset")
+                }
             }
         }
     }
@@ -198,9 +226,9 @@ fun SettingsScreen(
     if (showResetConfirmation) {
         AlertDialog(
             onDismissRequest = { showResetConfirmation = false },
-            title = { Text("Reset presets?") },
+            title = { Text("Reset profiles?") },
             text = {
-                Text("This removes custom presets and restores the bundled defaults.")
+                Text("This removes custom profiles and restores the bundled defaults.")
             },
             confirmButton = {
                 TextButton(
@@ -225,27 +253,52 @@ fun SettingsScreen(
 private fun ThemeModeSelector(
     selected: AppColorSource,
     onChange: (AppColorSource) -> Unit,
+    selectedAccentColor: Int,
+    onAccentColorChange: (Int) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         ThemeModeOption(
             title = "System colors",
-            description = "Follow Material You colors from the system.",
             selected = selected == AppColorSource.SYSTEM,
             onClick = { onChange(AppColorSource.SYSTEM) },
         )
-        ThemeModeOption(
-            title = "Custom accent",
-            description = "Build the app palette from one accent color.",
-            selected = selected == AppColorSource.CUSTOM_ACCENT,
-            onClick = { onChange(AppColorSource.CUSTOM_ACCENT) },
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(
+                selected = selected == AppColorSource.CUSTOM_ACCENT,
+                onClick = { onChange(AppColorSource.CUSTOM_ACCENT) },
+            )
+            Text(
+                text = "Custom",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+            Row(
+                modifier = Modifier.padding(start = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                accentColorOptions.forEach { accentColor ->
+                    AccentSwatch(
+                        color = Color(accentColor),
+                        selected = selectedAccentColor == accentColor,
+                        onClick = {
+                            onChange(AppColorSource.CUSTOM_ACCENT)
+                            onAccentColorChange(accentColor)
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun ThemeModeOption(
     title: String,
-    description: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -261,16 +314,11 @@ private fun ThemeModeOption(
             modifier = Modifier
                 .padding(start = 8.dp)
                 .weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
@@ -284,7 +332,7 @@ private fun AccentSwatch(
 ) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(28.dp)
             .background(color, CircleShape)
             .border(
                 width = if (selected) 3.dp else 1.dp,
@@ -300,18 +348,28 @@ private fun TileBehaviorSelector(
     selected: TileInteractionBehavior,
     onChange: (TileInteractionBehavior) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         TileBehaviorOption(
-            title = "Show dialog",
-            description = "Open the compact editor dialog.",
+            title = "Quick settings dialog",
             selected = selected == TileInteractionBehavior.SHOW_DIALOG,
             onClick = { onChange(TileInteractionBehavior.SHOW_DIALOG) },
+            modifier = Modifier.weight(1f),
         )
         TileBehaviorOption(
             title = "Cycle presets",
-            description = "Apply the next preset immediately.",
-            selected = selected == TileInteractionBehavior.CYCLE_PRESETS,
-            onClick = { onChange(TileInteractionBehavior.CYCLE_PRESETS) },
+            selected = selected == TileInteractionBehavior.CYCLE_PROFILES,
+            onClick = { onChange(TileInteractionBehavior.CYCLE_PROFILES) },
+            modifier = Modifier.weight(1f),
+        )
+        TileBehaviorOption(
+            title = "Open app",
+            selected = selected == TileInteractionBehavior.OPEN_APP,
+            onClick = { onChange(TileInteractionBehavior.OPEN_APP) },
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -319,12 +377,12 @@ private fun TileBehaviorSelector(
 @Composable
 private fun TileBehaviorOption(
     title: String,
-    description: String,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
@@ -333,20 +391,33 @@ private fun TileBehaviorOption(
         )
         Column(
             modifier = Modifier
-                .padding(start = 8.dp)
+                .padding(start = 4.dp)
                 .weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
             )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-            )
         }
+    }
+}
+
+@Composable
+private fun SettingsControlGroup(
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        content()
     }
 }
 
@@ -355,16 +426,25 @@ private fun SettingsSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        content = {
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
             content()
-        },
-    )
+        }
+    }
 }

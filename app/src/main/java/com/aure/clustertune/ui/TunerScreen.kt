@@ -1,4 +1,4 @@
-package com.aure.androidtuner.ui
+package com.aure.clustertune.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -65,27 +66,24 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.aure.androidtuner.model.CpuPolicyInfo
-import com.aure.androidtuner.model.PerformanceProfile
-import com.aure.androidtuner.model.PresetStateResolver
-import com.aure.androidtuner.model.ProfileSource
-import com.aure.androidtuner.model.TunerState
+import com.aure.clustertune.model.CpuPolicyInfo
+import com.aure.clustertune.model.PerformanceProfile
+import com.aure.clustertune.model.ProfileStateResolver
+import com.aure.clustertune.model.ProfileSource
+import com.aure.clustertune.model.TunerState
 import kotlinx.coroutines.delay
 
-private const val NEW_PRESET_DIALOG_ID = "__new_preset__"
+private const val NEW_PROFILE_DIALOG_ID = "__new_profile__"
 
 @Composable
 fun MainTunerScreen(
     state: TunerState,
-    onPolicyValueChange: (CpuPolicyInfo, Int) -> Unit,
     onApplyProfile: (PerformanceProfile) -> Unit,
-    onClearSelection: () -> Unit,
     onApplyCurrent: (TunerState) -> Unit,
-    onCreatePreset: (String, TunerState) -> Unit,
-    onUpdatePreset: (String, String, TunerState) -> Unit,
-    onDeletePreset: (String) -> Unit,
-    onMovePreset: (String, Int) -> Unit,
-    onResetProfiles: () -> Unit,
+    onCreateProfile: (String, TunerState) -> Unit,
+    onUpdateProfile: (String, String, TunerState) -> Unit,
+    onDeleteProfile: (String) -> Unit,
+    onMoveProfile: (String, Int) -> Unit,
     onOpenSettings: () -> Unit,
     onRefreshLiveValues: () -> Unit,
     onRefreshStructure: () -> Unit,
@@ -132,7 +130,7 @@ fun MainTunerScreen(
             } else {
                 CurrentFrequenciesCard(
                     state = state,
-                    onEditManual = { dialogProfileId = PresetStateResolver.MANUAL_PROFILE_ID },
+                    onEditManual = { dialogProfileId = ProfileStateResolver.MANUAL_PROFILE_ID },
                 )
 
                 when {
@@ -145,13 +143,13 @@ fun MainTunerScreen(
                     }
 
                     else -> {
-                        PresetListSection(
+                        ProfileListSection(
                             state = state,
                             onApplyProfile = onApplyProfile,
-                            onOpenCreatePreset = { dialogProfileId = NEW_PRESET_DIALOG_ID },
-                            onEditPreset = { dialogProfileId = it },
-                            onMovePreset = onMovePreset,
-                            onApplySelectedPreset = { onApplyCurrent(state) },
+                            onOpenCreateProfile = { dialogProfileId = NEW_PROFILE_DIALOG_ID },
+                            onEditProfile = { dialogProfileId = it },
+                            onMoveProfile = onMoveProfile,
+                            onApplySelectedProfile = { onApplyCurrent(state) },
                         )
                     }
                 }
@@ -165,7 +163,7 @@ fun MainTunerScreen(
                 null
             } else {
                 PerformanceProfile(
-                    id = PresetStateResolver.MANUAL_PROFILE_ID,
+                    id = ProfileStateResolver.MANUAL_PROFILE_ID,
                     name = "Manual",
                     maxFrequencies = state.policies.associate { policy ->
                         policy.id to (state.actualValues[policy.id] ?: policy.currentMaxFreq)
@@ -177,26 +175,26 @@ fun MainTunerScreen(
             }
         }
         val profile = when (profileId) {
-            PresetStateResolver.MANUAL_PROFILE_ID -> manualProfile
+            ProfileStateResolver.MANUAL_PROFILE_ID -> manualProfile
             else -> state.displayProfiles.firstOrNull { it.id == profileId }
         }
-        PresetEditorDialog(
+        ProfileEditorDialog(
             baseState = state,
             profile = profile,
-            creatingNewPreset = profileId == NEW_PRESET_DIALOG_ID,
-            manualMode = profileId == PresetStateResolver.MANUAL_PROFILE_ID,
+            creatingNewProfile = profileId == NEW_PROFILE_DIALOG_ID,
+            manualMode = profileId == ProfileStateResolver.MANUAL_PROFILE_ID,
             onDismiss = { dialogProfileId = null },
             onSave = { name, values ->
                 val editedState = state.copy(currentValues = values)
                 when {
-                    profileId == NEW_PRESET_DIALOG_ID -> onCreatePreset(name, editedState)
-                    profileId == PresetStateResolver.MANUAL_PROFILE_ID -> onApplyCurrent(editedState)
-                    profile != null -> onUpdatePreset(profile.id, name, editedState)
+                    profileId == NEW_PROFILE_DIALOG_ID -> onCreateProfile(name, editedState)
+                    profileId == ProfileStateResolver.MANUAL_PROFILE_ID -> onApplyCurrent(editedState)
+                    profile != null -> onUpdateProfile(profile.id, name, editedState)
                 }
                 dialogProfileId = null
             },
             onDelete = {
-                profile?.let { onDeletePreset(it.id) }
+                profile?.let { onDeleteProfile(it.id) }
                 dialogProfileId = null
             },
         )
@@ -210,11 +208,6 @@ fun CompactTunerScreen(
     onApplyProfile: (PerformanceProfile) -> Unit,
     onClearSelection: () -> Unit,
     onApplyCurrent: (TunerState) -> Unit,
-    onCreatePreset: (String, TunerState) -> Unit,
-    onUpdatePreset: (String, String, TunerState) -> Unit,
-    onDeletePreset: (String) -> Unit,
-    onMovePreset: (String, Int) -> Unit,
-    onResetProfiles: () -> Unit,
     onDismissRequest: (() -> Unit)?,
     onOpenFullApp: (() -> Unit)? = null,
 ) {
@@ -243,7 +236,7 @@ fun CompactTunerScreen(
                 }
 
                 else -> {
-                    PresetChipSelector(
+                    ProfileChipSelector(
                         state = state,
                         onApplyProfile = onApplyProfile,
                         onClearSelection = onClearSelection,
@@ -395,7 +388,7 @@ private fun Header(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Handheld Performance",
+                    text = "ClusterTune",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -440,7 +433,7 @@ private fun CurrentFrequenciesCard(
         containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
     ) {
         if (state.policies.isEmpty()) {
-            Text("No CPU policies found.")
+            Text("No CPU clusters found.")
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -477,13 +470,13 @@ private fun CurrentFrequenciesCard(
 }
 
 @Composable
-private fun PresetListSection(
+private fun ProfileListSection(
     state: TunerState,
     onApplyProfile: (PerformanceProfile) -> Unit,
-    onOpenCreatePreset: () -> Unit,
-    onEditPreset: (String) -> Unit,
-    onMovePreset: (String, Int) -> Unit,
-    onApplySelectedPreset: () -> Unit,
+    onOpenCreateProfile: () -> Unit,
+    onEditProfile: (String) -> Unit,
+    onMoveProfile: (String, Int) -> Unit,
+    onApplySelectedProfile: () -> Unit,
 ) {
     SectionCard(
         title = null,
@@ -495,11 +488,11 @@ private fun PresetListSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Presets",
+                text = "Profiles",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            TextButton(onClick = onOpenCreatePreset) {
+            TextButton(onClick = onOpenCreateProfile) {
                 Icon(
                     Icons.Rounded.Add,
                     contentDescription = null,
@@ -517,7 +510,7 @@ private fun PresetListSection(
             state.displayProfiles.forEach { profile ->
                 val movableIndex = state.displayProfiles.indexOfFirst { it.id == profile.id }
                 val canMove = movableIndex >= 0
-                PresetListRow(
+                ProfileListRow(
                     profile = profile,
                     isApplied = profile.id == state.activeDisplayProfileId,
                     isSelected = profile.id == state.selectedDisplayProfileId,
@@ -529,15 +522,15 @@ private fun PresetListSection(
                     onClick = { onApplyProfile(profile) },
                     onEdit = {
                         if (profile.isEditable) {
-                            onEditPreset(profile.id)
+                            onEditProfile(profile.id)
                         }
                     },
-                    onMovePreset = { offset -> onMovePreset(profile.id, offset) },
+                    onMoveProfile = { offset -> onMoveProfile(profile.id, offset) },
                 )
             }
         }
 
-        val canApplySelectedPreset = state.selectedDisplayProfileId != null &&
+        val canApplySelectedProfile = state.selectedDisplayProfileId != null &&
             state.policies.isNotEmpty() &&
             state.isPServerAvailable
         Spacer(Modifier.size(4.dp))
@@ -546,13 +539,13 @@ private fun PresetListSection(
             horizontalArrangement = Arrangement.End,
         ) {
             Button(
-                onClick = onApplySelectedPreset,
-                enabled = canApplySelectedPreset,
+                onClick = onApplySelectedProfile,
+                enabled = canApplySelectedProfile,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Text(
                     text = state.selectedDisplayProfileName?.let { "Apply $it" }
-                        ?: "Select a preset to apply",
+                        ?: "Select a profile to apply",
                 )
             }
         }
@@ -560,7 +553,7 @@ private fun PresetListSection(
 }
 
 @Composable
-private fun PresetListRow(
+private fun ProfileListRow(
     profile: PerformanceProfile,
     isApplied: Boolean,
     isSelected: Boolean,
@@ -571,7 +564,7 @@ private fun PresetListRow(
     valuePreview: Map<Int, Int>,
     onClick: () -> Unit,
     onEdit: () -> Unit,
-    onMovePreset: (Int) -> Unit,
+    onMoveProfile: (Int) -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val rowShape = RoundedCornerShape(20.dp)
@@ -614,7 +607,7 @@ private fun PresetListRow(
                 enabled = true,
                 canMoveUp = canMoveUp,
                 canMoveDown = canMoveDown,
-                onMovePreset = onMovePreset,
+                onMoveProfile = onMoveProfile,
             )
         } else {
             Spacer(Modifier.width(64.dp))
@@ -656,7 +649,7 @@ private fun ReorderControl(
     enabled: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
-    onMovePreset: (Int) -> Unit,
+    onMoveProfile: (Int) -> Unit,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     Row(
@@ -664,7 +657,7 @@ private fun ReorderControl(
         horizontalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         IconButton(
-            onClick = { onMovePreset(-1) },
+            onClick = { onMoveProfile(-1) },
             enabled = enabled && canMoveUp,
             modifier = Modifier.size(32.dp),
         ) {
@@ -675,7 +668,7 @@ private fun ReorderControl(
             )
         }
         IconButton(
-            onClick = { onMovePreset(1) },
+            onClick = { onMoveProfile(1) },
             enabled = enabled && canMoveDown,
             modifier = Modifier.size(32.dp),
         ) {
@@ -707,7 +700,7 @@ private fun ValuePreviewChips(
                 shape = RoundedCornerShape(999.dp),
             ) {
                 Text(
-                    text = "P$policyId: ${formatFrequency(value)}",
+                    text = "C$policyId: ${formatFrequency(value)}",
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = chipContentColor,
@@ -718,7 +711,7 @@ private fun ValuePreviewChips(
 }
 
 @Composable
-private fun PresetChipSelector(
+private fun ProfileChipSelector(
     state: TunerState,
     onApplyProfile: (PerformanceProfile) -> Unit,
     onClearSelection: () -> Unit,
@@ -734,7 +727,7 @@ private fun PresetChipSelector(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             state.displayProfiles.forEach { profile ->
-                PresetSelectorChip(
+                ProfileSelectorChip(
                     label = profile.name,
                     isApplied = profile.id == state.activeDisplayProfileId,
                     isSelected = profile.id == state.selectedDisplayProfileId,
@@ -742,7 +735,7 @@ private fun PresetChipSelector(
                 )
             }
             if (state.isManualSelection) {
-                PresetSelectorChip(
+                ProfileSelectorChip(
                     label = "Manual",
                     isApplied = false,
                     isSelected = true,
@@ -770,7 +763,7 @@ private fun PresetChipSelector(
 }
 
 @Composable
-private fun PresetSelectorChip(
+private fun ProfileSelectorChip(
     label: String,
     isApplied: Boolean,
     isSelected: Boolean,
@@ -817,25 +810,25 @@ private fun PolicyEditorSection(
 }
 
 @Composable
-private fun PresetEditorDialog(
+private fun ProfileEditorDialog(
     baseState: TunerState,
     profile: PerformanceProfile?,
-    creatingNewPreset: Boolean,
+    creatingNewProfile: Boolean,
     manualMode: Boolean,
     onDismiss: () -> Unit,
     onSave: (String, Map<Int, Int>) -> Unit,
     onDelete: () -> Unit,
 ) {
-    val initialValues = remember(profile?.id, creatingNewPreset, manualMode, baseState.actualValues) {
+    val initialValues = remember(profile?.id, creatingNewProfile, manualMode, baseState.actualValues) {
         baseState.policies.associate { policy ->
             val initialValue = when {
-                creatingNewPreset || manualMode -> baseState.actualValues[policy.id]
+                creatingNewProfile || manualMode -> baseState.actualValues[policy.id]
                 else -> profile?.maxFrequencies?.get(policy.id)
             } ?: policy.currentMaxFreq
             policy.id to initialValue
         }
     }
-    var presetName by remember(profile?.id, creatingNewPreset) { mutableStateOf(profile?.name.orEmpty()) }
+    var profileName by remember(profile?.id, creatingNewProfile) { mutableStateOf(profile?.name.orEmpty()) }
     var editedValues by remember(profile?.id, initialValues) { mutableStateOf(initialValues) }
     var showDeleteConfirmation by remember(profile?.id) { mutableStateOf(false) }
 
@@ -861,11 +854,11 @@ private fun PresetEditorDialog(
             ) {
                 if (!manualMode) {
                     OutlinedTextField(
-                        value = presetName,
-                        onValueChange = { presetName = it },
+                        value = profileName,
+                        onValueChange = { profileName = it },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        label = { Text("Preset name") },
+                        label = { Text("Profile name") },
                     )
                 }
                 baseState.policies.forEach { policy ->
@@ -906,7 +899,7 @@ private fun PresetEditorDialog(
                             ) {
                                 Icon(
                                     Icons.Rounded.Delete,
-                                    contentDescription = "Delete preset",
+                                    contentDescription = "Delete profile",
                                     tint = MaterialTheme.colorScheme.error,
                                 )
                             }
@@ -918,8 +911,8 @@ private fun PresetEditorDialog(
                                 Text("Cancel")
                             }
                             Button(
-                                onClick = { onSave(presetName, editedValues) },
-                                enabled = presetName.isNotBlank() && baseState.policies.isNotEmpty(),
+                                onClick = { onSave(profileName, editedValues) },
+                                enabled = profileName.isNotBlank() && baseState.policies.isNotEmpty(),
                             ) {
                                 Text("Save")
                             }
@@ -933,8 +926,8 @@ private fun PresetEditorDialog(
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Delete preset?") },
-            text = { Text("This preset will be removed until you reset presets to default.") },
+            title = { Text("Delete profile?") },
+            text = { Text("This profile will be removed until you reset profiles to default.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -956,12 +949,12 @@ private fun PresetEditorDialog(
 
 @Composable
 private fun EmptyState(state: TunerState) {
-    SectionCard(title = "No CPU Policies Found") {
+    SectionCard(title = "No CPU Clusters Found") {
         Text(
             text = if (state.isLoading) {
-                "Scanning cpufreq policies..."
+                "Scanning CPU clusters..."
             } else {
-                "No compatible cpufreq policy directories were found under /sys/devices/system/cpu/cpufreq."
+                "No compatible CPU frequency clusters were found."
             },
         )
     }
@@ -984,39 +977,74 @@ private fun PolicyCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "Policy ${policy.id}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Sel ${formatFrequency(selectedValue)}",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.End,
-            )
-            Text(
-                text = "Now ${formatFrequency(actualValue)}",
-                style = MaterialTheme.typography.bodyMedium,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Cluster ${policy.id}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    policy.cpuIds.forEach { cpuId ->
+                        Icon(
+                            Icons.Filled.Memory,
+                            contentDescription = "CPU $cpuId",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        )
+                    }
+                }
+            }
+            Surface(
                 color = if (actualValue == selectedValue) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.primaryContainer
                 } else {
-                    MaterialTheme.colorScheme.tertiary
+                    MaterialTheme.colorScheme.tertiaryContainer
                 },
-                textAlign = TextAlign.End,
-            )
+                shape = RoundedCornerShape(999.dp),
+            ) {
+                Text(
+                    text = "Current ${formatFrequency(actualValue)}",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (actualValue == selectedValue) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onTertiaryContainer
+                    },
+                    textAlign = TextAlign.End,
+                )
+            }
         }
         CompositionLocalProvider(
             LocalMinimumInteractiveComponentSize provides if (compactMode) Dp.Unspecified else 48.dp,
         ) {
-            Slider(
-                value = currentIndex.toFloat(),
-                onValueChange = { raw ->
-                    val index = raw.toInt().coerceIn(0, supported.lastIndex)
-                    onValueChanged(supported[index])
-                },
-                valueRange = 0f..supported.lastIndex.toFloat(),
-                steps = (supported.size - 2).coerceAtLeast(0),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Slider(
+                    value = currentIndex.toFloat(),
+                    onValueChange = { raw ->
+                        val index = raw.toInt().coerceIn(0, supported.lastIndex)
+                        onValueChanged(supported[index])
+                    },
+                    valueRange = 0f..supported.lastIndex.toFloat(),
+                    steps = (supported.size - 2).coerceAtLeast(0),
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = formatFrequency(selectedValue),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.End,
+                )
+            }
         }
     }
 }

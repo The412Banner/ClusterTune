@@ -1,4 +1,4 @@
-package com.aure.androidtuner.ui.theme
+package com.aure.clustertune.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -16,8 +16,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.aure.androidtuner.model.AppColorSource
-import com.aure.androidtuner.model.AppSettings
+import com.aure.clustertune.model.AppColorSource
+import com.aure.clustertune.model.AppSettings
 import com.google.android.material.color.utilities.Hct
 import com.google.android.material.color.utilities.MaterialDynamicColors
 import com.google.android.material.color.utilities.SchemeTonalSpot
@@ -26,7 +26,7 @@ private val LightColors = lightColorScheme()
 private val DarkColors = darkColorScheme()
 
 @Composable
-fun AndroidTunerTheme(
+fun ClusterTuneTheme(
     settings: AppSettings = AppSettings(),
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
@@ -52,7 +52,10 @@ fun AndroidTunerTheme(
         SideEffect {
             val window = (context as? Activity)?.window ?: return@SideEffect
             window.statusBarColor = colorScheme.surface.toArgb()
-            window.navigationBarColor = colorScheme.surface.toArgb()
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced = false
+            }
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }

@@ -76,6 +76,14 @@ object ProfileStateResolver {
         }
     }
 
+    fun preferredProfileForCurrentValues(state: TunerState): PerformanceProfile? {
+        return state.displayProfiles.firstOrNull { profile ->
+            profile.id == state.selectedDisplayProfileId && matchesProfile(state.currentValues, profile)
+        } ?: state.displayProfiles.firstOrNull { profile ->
+            matchesProfile(state.currentValues, profile)
+        }
+    }
+
     fun buildDisplayProfiles(
         realProfiles: List<PerformanceProfile>,
         stockProfile: PerformanceProfile?,

@@ -89,14 +89,20 @@ class TunerViewModel(
         }
     }
 
+    fun consumeStatusMessage() {
+        transientMessage.value = null
+    }
+
+    fun consumeErrorMessage() {
+        transientError.value = null
+    }
+
     fun applyCurrent(state: TunerState, onApplied: (String) -> Unit = {}) {
         transientMessage.value = null
         transientError.value = null
 
         viewModelScope.launch {
-            val appliedProfile = state.displayProfiles.firstOrNull { profile ->
-                ProfileStateResolver.matchesProfile(state.currentValues, profile)
-            }
+            val appliedProfile = ProfileStateResolver.preferredProfileForCurrentValues(state)
             val applyResult = repository.applyValues(
                 policies = state.policies,
                 selectedValues = state.currentValues,
@@ -110,15 +116,13 @@ class TunerViewModel(
                 } else {
                     buildVerificationFailureMessage(state, outcome.actualValues, outcome.commandOutput)
                 }
-                if (outcome.verificationPassed) {
-                    onApplied(appliedProfile?.name ?: "Manual")
-                }
                 transientError.value = null
             }.onFailure { throwable ->
                 transientError.value = throwable.message ?: "Failed to apply limits"
             }
             if (applyResult.isSuccess) {
                 repository.selectProfile(appliedProfile?.id?.takeUnless { it == ProfileStateResolver.STOCK_PROFILE_ID })
+                onApplied(appliedProfile?.name ?: "Manual")
             }
         }
     }

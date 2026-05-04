@@ -36,7 +36,6 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -86,7 +85,6 @@ fun MainTunerScreen(
     onMoveProfile: (String, Int) -> Unit,
     onOpenSettings: () -> Unit,
     onRefreshLiveValues: () -> Unit,
-    onRefreshStructure: () -> Unit,
     onStatusMessageShown: () -> Unit,
     onErrorMessageShown: () -> Unit,
 ) {
@@ -102,13 +100,6 @@ fun MainTunerScreen(
         while (true) {
             delay(1_000)
             onRefreshLiveValues()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(15_000)
-            onRefreshStructure()
         }
     }
 
@@ -139,26 +130,14 @@ fun MainTunerScreen(
                     onEditManual = { dialogProfileId = ProfileStateResolver.MANUAL_PROFILE_ID },
                 )
 
-                when {
-                    state.isReadingStockValues -> {
-                        StockReadStatusCard()
-                    }
-
-                    state.stockReadError != null -> {
-                        StockReadErrorCard(state.stockReadError)
-                    }
-
-                    else -> {
-                        ProfileListSection(
-                            state = state,
-                            onApplyProfile = onApplyProfile,
-                            onOpenCreateProfile = { dialogProfileId = NEW_PROFILE_DIALOG_ID },
-                            onEditProfile = { dialogProfileId = it },
-                            onMoveProfile = onMoveProfile,
-                            onApplySelectedProfile = { onApplyCurrent(state) },
-                        )
-                    }
-                }
+                ProfileListSection(
+                    state = state,
+                    onApplyProfile = onApplyProfile,
+                    onOpenCreateProfile = { dialogProfileId = NEW_PROFILE_DIALOG_ID },
+                    onEditProfile = { dialogProfileId = it },
+                    onMoveProfile = onMoveProfile,
+                    onApplySelectedProfile = { onApplyCurrent(state) },
+                )
             }
         }
     }
@@ -236,29 +215,17 @@ fun CompactTunerScreen(
                 compactMode = true,
                 onOpenSettings = null,
             )
-            when {
-                state.isReadingStockValues -> {
-                    StockReadStatusCard()
-                }
-
-                state.stockReadError != null -> {
-                    StockReadErrorCard(state.stockReadError)
-                }
-
-                else -> {
-                    ProfileChipSelector(
-                        state = state,
-                        onApplyProfile = onApplyProfile,
-                        onClearSelection = onClearSelection,
-                        onOpenFullApp = onOpenFullApp,
-                    )
-                    PolicyEditorSection(
-                        state = state,
-                        onPolicyValueChange = onPolicyValueChange,
-                        compactMode = true,
-                    )
-                }
-            }
+            ProfileChipSelector(
+                state = state,
+                onApplyProfile = onApplyProfile,
+                onClearSelection = onClearSelection,
+                onOpenFullApp = onOpenFullApp,
+            )
+            PolicyEditorSection(
+                state = state,
+                onPolicyValueChange = onPolicyValueChange,
+                compactMode = true,
+            )
 
             if (onDismissRequest != null) {
                 Row(
@@ -285,45 +252,6 @@ fun CompactTunerScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun StockReadStatusCard() {
-    SectionCard(
-        title = null,
-        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.5.dp,
-            )
-            Text(
-                text = "Reading stock values",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun StockReadErrorCard(message: String) {
-    SectionCard(
-        title = null,
-        containerColor = MaterialTheme.colorScheme.errorContainer,
-    ) {
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
     }
 }
 

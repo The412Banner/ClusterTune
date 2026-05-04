@@ -21,7 +21,6 @@ object ProfileStorageCodec {
                     id = profile.id,
                     name = profile.name,
                     source = profile.source.name,
-                    isResetProfile = profile.isResetProfile,
                     order = profile.order,
                     isEditable = profile.isEditable,
                     isDeletable = profile.isDeletable,
@@ -43,7 +42,6 @@ object ProfileStorageCodec {
                         policyId.toIntOrNull()?.takeIf { frequency > 0 }?.let { it to frequency }
                     }.toMap(),
                     source = parseSource(profile.source),
-                    isResetProfile = profile.isResetProfile,
                     order = profile.order,
                     isEditable = profile.isEditable,
                     isDeletable = profile.isDeletable,
@@ -86,7 +84,6 @@ object ProfileStorageCodec {
         val id: String,
         val name: String,
         val source: String = ProfileSource.USER.name,
-        val isResetProfile: Boolean = false,
         val order: Int = 0,
         val isEditable: Boolean = true,
         val isDeletable: Boolean = true,

@@ -64,7 +64,6 @@ class BundledProfileProviderTest {
         )
 
         assertEquals(listOf("Small Underclock", "Medium Underclock", "Large Underclock"), profiles.map { it.name })
-        assertTrue(profiles.none { it.isResetProfile })
     }
 
     @Test

@@ -224,10 +224,6 @@ class TunerViewModel(
         }
     }
 
-    fun refreshStructureState() {
-        repository.refreshStructure()
-    }
-
     fun refreshLiveState() {
         repository.refreshLiveValues()
     }

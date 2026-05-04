@@ -15,7 +15,6 @@ class ProfileStorageCodecTest {
                 name = "Small Underclock",
                 maxFrequencies = mapOf(0 to 2_745_600, 6 to 3_072_000),
                 source = ProfileSource.BUNDLED,
-                isResetProfile = false,
                 order = 1,
                 isEditable = true,
                 isDeletable = false,
@@ -25,7 +24,6 @@ class ProfileStorageCodecTest {
                 name = "Stock",
                 maxFrequencies = emptyMap(),
                 source = ProfileSource.VIRTUAL,
-                isResetProfile = true,
                 order = 0,
                 isEditable = true,
                 isDeletable = false,
@@ -36,7 +34,6 @@ class ProfileStorageCodecTest {
 
         assertEquals(listOf("stock", "bundled_cq8725s_small"), parsed.map { it.id })
         assertEquals(ProfileSource.VIRTUAL, parsed.first().source)
-        assertEquals(true, parsed.first().isResetProfile)
         assertEquals(false, parsed.first().isDeletable)
         assertEquals(mapOf(0 to 2_745_600, 6 to 3_072_000), parsed.last().maxFrequencies)
     }

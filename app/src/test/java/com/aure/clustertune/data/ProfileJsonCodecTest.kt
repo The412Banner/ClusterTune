@@ -18,7 +18,6 @@ class ProfileJsonCodecTest {
                     name = "Small Underclock",
                     maxFrequencies = mapOf(0 to 2_745_600, 6 to 3_072_000),
                     source = ProfileSource.BUNDLED,
-                    isResetProfile = true,
                     order = 7,
                     isEditable = false,
                     isDeletable = false,
@@ -32,7 +31,6 @@ class ProfileJsonCodecTest {
         assertTrue(json.contains("\"name\""))
         assertTrue(json.contains("\"maxFrequencies\""))
         assertFalse(json.contains("\"source\""))
-        assertFalse(json.contains("\"isResetProfile\""))
         assertFalse(json.contains("\"isEditable\""))
         assertFalse(json.contains("\"isDeletable\""))
         assertFalse(json.contains("\"order\""))

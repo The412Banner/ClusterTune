@@ -16,8 +16,6 @@ class ProfileStorage(private val context: Context) {
 
     private val profilesKey = stringPreferencesKey("user_profiles")
     private val lastValuesKey = stringPreferencesKey("last_values")
-    private val initialStockValuesKey = stringPreferencesKey("initial_stock_values")
-    private val stockBootIdKey = stringPreferencesKey("stock_boot_id")
     private val selectedProfileKey = stringPreferencesKey("selected_profile")
     private val lastAppliedDisplayProfileKey = stringPreferencesKey("last_applied_display_profile")
     private val deletedBundledProfileIdsKey = stringSetPreferencesKey("deleted_bundled_profile_ids")
@@ -37,14 +35,6 @@ class ProfileStorage(private val context: Context) {
 
     val lastValues: Flow<Map<Int, Int>> = context.dataStore.data.map { preferences ->
         ProfileStorageCodec.parseIntMap(preferences[lastValuesKey])
-    }
-
-    val initialStockValues: Flow<Map<Int, Int>> = context.dataStore.data.map { preferences ->
-        ProfileStorageCodec.parseIntMap(preferences[initialStockValuesKey])
-    }
-
-    val stockBootId: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[stockBootIdKey]
     }
 
     val selectedProfileId: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -122,18 +112,6 @@ class ProfileStorage(private val context: Context) {
     suspend fun persistLastValues(values: Map<Int, Int>) {
         context.dataStore.edit { preferences ->
             preferences[lastValuesKey] = ProfileStorageCodec.encodeIntMap(values)
-        }
-    }
-
-    suspend fun persistInitialStockValues(values: Map<Int, Int>) {
-        context.dataStore.edit { preferences ->
-            preferences[initialStockValuesKey] = ProfileStorageCodec.encodeIntMap(values)
-        }
-    }
-
-    suspend fun persistStockBootId(bootId: String) {
-        context.dataStore.edit { preferences ->
-            preferences[stockBootIdKey] = bootId
         }
     }
 

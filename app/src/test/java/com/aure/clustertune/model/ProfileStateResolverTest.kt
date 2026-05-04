@@ -19,7 +19,6 @@ class ProfileStateResolverTest {
                 policies = policies,
                 actualValues = policies.associate { it.id to it.currentMaxFreq },
                 currentValues = policies.associate { it.id to it.selectableMaxFreq },
-                stockValues = policies.associate { it.id to it.selectableMaxFreq },
             ),
         )
 
@@ -40,7 +39,6 @@ class ProfileStateResolverTest {
                 policies = policies,
                 actualValues = mapOf(0 to 2_500_000),
                 currentValues = mapOf(0 to 2_500_000),
-                stockValues = mapOf(0 to 3_532_800),
             ),
         )
 
@@ -74,7 +72,6 @@ class ProfileStateResolverTest {
                 policies = policies,
                 actualValues = policies.associate { it.id to it.currentMaxFreq },
                 currentValues = policies.associate { it.id to it.selectableMaxFreq },
-                stockValues = policies.associate { it.id to it.selectableMaxFreq },
             ),
         )
 

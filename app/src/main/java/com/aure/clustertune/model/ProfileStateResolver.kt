@@ -6,7 +6,7 @@ object ProfileStateResolver {
     const val STOCK_PROFILE_ID = "virtual_stock"
 
     fun resolve(state: TunerState, currentValues: Map<Int, Int> = state.currentValues): TunerState {
-        val stockProfile = buildStockProfile(state.policies, state.stockValues)
+        val stockProfile = buildStockProfile(state.policies)
         val realProfiles = (state.bundledProfiles + state.userProfiles).sortedBy { it.order }
         val userProfiles = realProfiles.filter { it.source == ProfileSource.USER }
         val bundledProfiles = realProfiles.filter { it.source == ProfileSource.BUNDLED }
@@ -33,7 +33,6 @@ object ProfileStateResolver {
 
         return state.copy(
             currentValues = currentValues,
-            stockProfile = stockProfile,
             bundledProfiles = bundledProfiles,
             userProfiles = userProfiles,
             displayProfiles = displayProfiles,
@@ -54,10 +53,7 @@ object ProfileStateResolver {
         )
     }
 
-    fun buildStockProfile(
-        policies: List<CpuPolicyInfo>,
-        stockValues: Map<Int, Int>,
-    ): PerformanceProfile? {
+    fun buildStockProfile(policies: List<CpuPolicyInfo>): PerformanceProfile? {
         if (policies.isEmpty()) return null
         return PerformanceProfile(
             id = STOCK_PROFILE_ID,
@@ -66,7 +62,6 @@ object ProfileStateResolver {
                 policy.id to policy.observedMaxFreq
             },
             source = ProfileSource.VIRTUAL,
-            isResetProfile = true,
             isEditable = false,
             isDeletable = false,
         )

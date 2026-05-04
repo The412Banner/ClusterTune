@@ -93,7 +93,6 @@ class MainActivity : ComponentActivity() {
                             onMoveProfile = viewModel::moveProfile,
                             onOpenSettings = { showSettings = true },
                             onRefreshLiveValues = viewModel::refreshLiveState,
-                            onRefreshStructure = viewModel::refreshStructureState,
                             onStatusMessageShown = viewModel::consumeStatusMessage,
                             onErrorMessageShown = viewModel::consumeErrorMessage,
                         )

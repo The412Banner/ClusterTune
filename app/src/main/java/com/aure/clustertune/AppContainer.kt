@@ -2,7 +2,6 @@ package com.aure.clustertune
 
 import android.content.Context
 import com.aure.clustertune.data.BundledProfileProvider
-import com.aure.clustertune.data.BootIdReader
 import com.aure.clustertune.data.CpuPolicyDetector
 import com.aure.clustertune.data.PerformanceRepository
 import com.aure.clustertune.data.ProfileStorage
@@ -23,7 +22,6 @@ class AppContainer(context: Context) {
             detector = CpuPolicyDetector(
                 privilegedReader = PServerSysfsReader(appContext),
             ),
-            bootIdReader = BootIdReader(),
             bundledProfileProvider = BundledProfileProvider(appContext),
             profileStorage = ProfileStorage(appContext),
             commandBuilder = PerformanceCommandBuilder(),

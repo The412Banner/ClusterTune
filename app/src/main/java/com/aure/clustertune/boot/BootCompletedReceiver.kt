@@ -13,8 +13,13 @@ import kotlinx.coroutines.launch
 class BootCompletedReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
-        if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
+        when (intent?.action) {
+            Intent.ACTION_BOOT_COMPLETED -> handleBootCompleted(context)
+            Intent.ACTION_MY_PACKAGE_REPLACED -> QuickSettingsTileRefresher.requestUpdate(context)
+        }
+    }
 
+    private fun handleBootCompleted(context: Context) {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {

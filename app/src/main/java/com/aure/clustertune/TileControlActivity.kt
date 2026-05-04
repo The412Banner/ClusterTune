@@ -69,6 +69,7 @@ class TileControlActivity : ComponentActivity() {
                             applyCurrentFromDialog(tunerState)
                         },
                         onDismissRequest = ::dismissTileDialog,
+                        onRefreshLiveValues = viewModel::refreshLiveState,
                         onOpenFullApp = {
                             openFullApp()
                         },

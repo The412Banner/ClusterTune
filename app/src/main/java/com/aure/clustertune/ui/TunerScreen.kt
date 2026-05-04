@@ -98,6 +98,7 @@ fun MainTunerScreen(
     )
 
     LaunchedEffect(Unit) {
+        onRefreshLiveValues()
         while (true) {
             delay(1_000)
             onRefreshLiveValues()
@@ -197,6 +198,7 @@ fun CompactTunerScreen(
     onClearSelection: () -> Unit,
     onApplyCurrent: (TunerState) -> Unit,
     onDismissRequest: (() -> Unit)?,
+    onRefreshLiveValues: () -> Unit,
     onOpenFullApp: (() -> Unit)? = null,
 ) {
     ScreenNotifications(
@@ -204,6 +206,13 @@ fun CompactTunerScreen(
         onStatusMessageShown = {},
         onErrorMessageShown = {},
     )
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            onRefreshLiveValues()
+        }
+    }
 
     ScreenContainer(compactMode = true) {
         Column(
@@ -1028,7 +1037,7 @@ private fun PolicyCard(
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    text = formatFrequency(displaySelectedValue),
+                    text = formatFrequency(selectedValue, boosted = policy.isBoosted(selectedValue)),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.End,
                 )

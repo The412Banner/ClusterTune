@@ -119,8 +119,8 @@ class BundledProfileProviderTest {
         policyPath = "/sys/devices/system/cpu/cpufreq/policy$id",
         scalingMaxPath = "/sys/devices/system/cpu/cpufreq/policy$id/scaling_max_freq",
         currentMaxFreq = stockMax,
-        stockMaxFreq = stockMax,
-        hardwareMaxFreq = stockMax,
+        selectableMaxFreq = stockMax,
+        observedMaxFreq = stockMax,
         minFreq = supported.first(),
         supportedFrequencies = supported,
     )

@@ -1106,11 +1106,11 @@ private fun SectionCard(
 }
 
 private fun CpuPolicyInfo.clampToWritableMax(valueKhz: Int): Int {
-    return valueKhz.coerceAtMost(stockMaxFreq)
+    return valueKhz.coerceAtMost(selectableMaxFreq)
 }
 
 private fun CpuPolicyInfo.isBoosted(valueKhz: Int): Boolean {
-    return valueKhz > stockMaxFreq
+    return valueKhz > selectableMaxFreq
 }
 
 internal fun formatFrequency(valueKhz: Int, boosted: Boolean = false): String {

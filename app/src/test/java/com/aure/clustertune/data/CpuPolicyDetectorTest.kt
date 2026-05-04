@@ -38,8 +38,8 @@ class CpuPolicyDetectorTest {
         assertEquals(listOf(0, 1, 2, 3, 4, 5), result.first().cpuIds)
         assertEquals(listOf(6, 7), result.last().cpuIds)
         assertEquals(listOf(998400, 1785600, 2227200, 2745600), result.first().supportedFrequencies)
-        assertEquals(3072000, result.last().stockMaxFreq)
-        assertEquals(4320000, result.last().hardwareMaxFreq)
+        assertEquals(3072000, result.last().selectableMaxFreq)
+        assertEquals(4320000, result.last().observedMaxFreq)
     }
 
     @Test
@@ -66,8 +66,8 @@ class CpuPolicyDetectorTest {
             listOf(710400, 940800, 1209600, 1420800, 1785600, 2150400),
             result.supportedFrequencies,
         )
-        assertEquals(2_150_400, result.stockMaxFreq)
-        assertEquals(2_956_800, result.hardwareMaxFreq)
+        assertEquals(2_150_400, result.selectableMaxFreq)
+        assertEquals(2_956_800, result.observedMaxFreq)
         assertEquals(2_841_600, result.currentMaxFreq)
     }
 
@@ -112,7 +112,7 @@ class CpuPolicyDetectorTest {
 
         assertEquals(0, result.id)
         assertEquals(2_016_000, result.currentMaxFreq)
-        assertEquals(2_016_000, result.stockMaxFreq)
+        assertEquals(2_016_000, result.selectableMaxFreq)
         assertEquals(listOf(614400, 902400, 1209600, 1593600, 2016000), result.supportedFrequencies)
     }
 
@@ -170,8 +170,8 @@ class CpuPolicyDetectorTest {
             listOf(1017600, 1209600, 1401600, 1689600, 1958400, 2246400, 2438400),
             result.supportedFrequencies,
         )
-        assertEquals(2_438_400, result.stockMaxFreq)
-        assertEquals(4_320_000, result.hardwareMaxFreq)
+        assertEquals(2_438_400, result.selectableMaxFreq)
+        assertEquals(4_320_000, result.observedMaxFreq)
     }
 
     @Test

@@ -41,17 +41,17 @@ class CpuPolicyDetector(
                 currentMaxFreq = scalingMax ?: cpuInfoMax ?: 0,
             )
         }
-        val stockMax = supported.lastOrNull() ?: maxOfNotNull(scalingMax, cpuInfoMax) ?: return null
-        val hardwareMax = maxOfNotNull(cpuInfoMax, scalingMax, timeInStateMax, stockMax) ?: stockMax
-        val currentMax = scalingMax ?: supported.lastOrNull() ?: cpuInfoMax ?: stockMax
+        val selectableMax = supported.lastOrNull() ?: maxOfNotNull(scalingMax, cpuInfoMax) ?: return null
+        val observedMax = maxOfNotNull(cpuInfoMax, scalingMax, timeInStateMax, selectableMax) ?: selectableMax
+        val currentMax = scalingMax ?: supported.lastOrNull() ?: cpuInfoMax ?: selectableMax
 
         return CpuPolicyInfo(
             id = id,
             policyPath = policyPath,
             scalingMaxPath = scalingMaxPath,
             currentMaxFreq = currentMax,
-            stockMaxFreq = stockMax,
-            hardwareMaxFreq = hardwareMax,
+            selectableMaxFreq = selectableMax,
+            observedMaxFreq = observedMax,
             minFreq = minFreq,
             supportedFrequencies = supported,
             cpuIds = cpuIds,

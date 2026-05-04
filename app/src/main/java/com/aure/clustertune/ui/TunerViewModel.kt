@@ -270,7 +270,7 @@ class TunerViewModel(
             val requested = state.currentValues[policy.id] ?: policy.currentMaxFreq
             val actual = actualValues[policy.id] ?: policy.currentMaxFreq
             "C${policy.id} requested ${formatFrequency(requested)}, " +
-                "actual ${formatFrequency(actual, boosted = actual > policy.stockMaxFreq)}"
+                "actual ${formatFrequency(actual, boosted = actual > policy.selectableMaxFreq)}"
         }
         val base = "Apply did not stick: $summary"
         return commandOutput?.takeIf { it.isNotBlank() }?.let { "$base | log: ${it.take(120)}" } ?: base

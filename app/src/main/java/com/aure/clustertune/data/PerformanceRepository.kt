@@ -515,7 +515,7 @@ class PerformanceRepository(
     }
 
     private fun stockValuesForPolicies(policies: List<CpuPolicyInfo>): Map<Int, Int> {
-        return policies.associate { policy -> policy.id to policy.stockMaxFreq }
+        return policies.associate { policy -> policy.id to policy.selectableMaxFreq }
     }
 
     private fun repairStockValues(

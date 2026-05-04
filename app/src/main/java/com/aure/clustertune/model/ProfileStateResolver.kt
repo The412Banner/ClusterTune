@@ -63,7 +63,7 @@ object ProfileStateResolver {
             id = STOCK_PROFILE_ID,
             name = "Stock",
             maxFrequencies = policies.associate { policy ->
-                policy.id to policy.hardwareMaxFreq
+                policy.id to policy.observedMaxFreq
             },
             source = ProfileSource.VIRTUAL,
             isResetProfile = true,
@@ -91,11 +91,11 @@ object ProfileStateResolver {
         actualValue: Int,
     ): Boolean {
         if (actualValue == requestedValue) return true
-        val writableMax = policy.stockMaxFreq
-        return requestedValue >= writableMax &&
-            requestedValue <= policy.hardwareMaxFreq &&
-            actualValue >= writableMax &&
-            actualValue <= policy.hardwareMaxFreq
+        val selectableMax = policy.selectableMaxFreq
+        return requestedValue >= selectableMax &&
+            requestedValue <= policy.observedMaxFreq &&
+            actualValue >= selectableMax &&
+            actualValue <= policy.observedMaxFreq
     }
 
     fun preferredProfileForCurrentValues(state: TunerState): PerformanceProfile? {

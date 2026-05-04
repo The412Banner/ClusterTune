@@ -18,8 +18,8 @@ class ProfileStateResolverTest {
                 isLoading = false,
                 policies = policies,
                 actualValues = policies.associate { it.id to it.currentMaxFreq },
-                currentValues = policies.associate { it.id to it.stockMaxFreq },
-                stockValues = policies.associate { it.id to it.stockMaxFreq },
+                currentValues = policies.associate { it.id to it.selectableMaxFreq },
+                stockValues = policies.associate { it.id to it.selectableMaxFreq },
             ),
         )
 
@@ -73,8 +73,8 @@ class ProfileStateResolverTest {
                 isLoading = false,
                 policies = policies,
                 actualValues = policies.associate { it.id to it.currentMaxFreq },
-                currentValues = policies.associate { it.id to it.stockMaxFreq },
-                stockValues = policies.associate { it.id to it.stockMaxFreq },
+                currentValues = policies.associate { it.id to it.selectableMaxFreq },
+                stockValues = policies.associate { it.id to it.selectableMaxFreq },
             ),
         )
 
@@ -126,8 +126,8 @@ class ProfileStateResolverTest {
         policyPath = "/sys/devices/system/cpu/cpufreq/policy$id",
         scalingMaxPath = "/sys/devices/system/cpu/cpufreq/policy$id/scaling_max_freq",
         currentMaxFreq = current,
-        stockMaxFreq = stock,
-        hardwareMaxFreq = hardware,
+        selectableMaxFreq = stock,
+        observedMaxFreq = hardware,
         minFreq = supported.first(),
         supportedFrequencies = supported,
     )

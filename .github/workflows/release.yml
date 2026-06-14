@@ -4,13 +4,18 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.4.0)"
+        required: true
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Build signed release
+    name: Build and publish release
     runs-on: ubuntu-latest
 
     steps:
@@ -23,35 +28,47 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Decode release keystore
-        run: |
-          mkdir -p "$RUNNER_TEMP/clustertune"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/clustertune/release.jks"
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Test
+      - name: Resolve version
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ github.event.inputs.tag }}"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease
-        env:
-          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/clustertune/release.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      # This fork has no signing secrets, so we ship the debug-keystore APK.
+      # Each build uses a fresh ephemeral debug key; uninstall any prior build
+      # before reinstalling (INSTALL_FAILED_UPDATE_INCOMPATIBLE otherwise).
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
 
       - name: Prepare release assets
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${{ steps.version.outputs.version }}"
           mkdir -p release
-          cp app/build/outputs/apk/release/app-release.apk "release/ClusterTune-v${version}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "release/ClusterTune-v${version}.apk"
           sha256sum "release/ClusterTune-v${version}.apk" > "release/ClusterTune-v${version}.apk.sha256"
 
       - name: Create GitHub release
         run: |
-          gh release create "$GITHUB_REF_NAME" release/* \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes
+          tag="${{ steps.version.outputs.tag }}"
+          notes_file="docs/RELEASE_NOTES_${tag}.md"
+          if [ -f "$notes_file" ]; then
+            gh release create "$tag" release/* \
+              --title "ClusterTune ${tag}" \
+              --notes-file "$notes_file"
+          else
+            gh release create "$tag" release/* \
+              --title "ClusterTune ${tag}" \
+              --generate-notes
+          fi
         env:
           GH_TOKEN: ${{ github.token }}

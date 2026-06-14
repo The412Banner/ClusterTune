@@ -143,6 +143,7 @@ class PerformanceRepository(
                         TunerState(
                             isLoading = false,
                             isPServerAvailable = rootCommandRunner.isAvailable,
+                            socModel = bundledProfileProvider.currentSocModel(),
                             policies = policies,
                             actualValues = actualValues,
                             currentValues = mergeValues(policies, defaultValues, storage.lastValues),

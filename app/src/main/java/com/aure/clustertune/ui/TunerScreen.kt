@@ -1,6 +1,8 @@
 package com.aure.clustertune.ui
 
+import android.os.Build
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,6 +56,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +123,8 @@ fun MainTunerScreen(
                 compactMode = false,
                 onOpenSettings = onOpenSettings,
             )
+
+            DeviceInfoCard(state = state)
 
             if (state.isLoading) {
                 LoadingClustersCard()
@@ -411,6 +416,152 @@ private fun Header(
             )
         }
     }
+}
+
+@Composable
+private fun DeviceInfoCard(state: TunerState) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    val deviceName = remember {
+        val manufacturer = Build.MANUFACTURER?.trim().orEmpty()
+        val model = Build.MODEL?.trim().orEmpty()
+        when {
+            model.isEmpty() -> manufacturer.ifEmpty { "Unknown device" }
+            manufacturer.isEmpty() || model.startsWith(manufacturer, ignoreCase = true) -> model
+            else -> "$manufacturer $model"
+        }
+    }
+    val socModel = state.socModel?.trim()?.takeIf { it.isNotEmpty() }
+    val marketingName = socMarketingName(socModel)
+    val coreCount = state.policies.sumOf { it.cpuIds.size }
+    val clusterCount = state.policies.size
+    val socVendor = Build.SOC_MANUFACTURER?.trim()
+        ?.takeIf { it.isNotEmpty() && !it.equals("unknown", ignoreCase = true) }
+
+    val subtitle = listOfNotNull(
+        socModel,
+        marketingName,
+        coreCount.takeIf { it > 0 }?.let { "$it-core" },
+    ).joinToString(" · ").ifEmpty { "Tap for device details" }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded }
+            .animateContentSize(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (expanded) 10.dp else 4.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Memory,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = deviceName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = if (expanded) "Hide device details" else "Show device details",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    marketingName?.let { DeviceInfoRow("Chipset", it) }
+                    DeviceInfoRow("SoC model", socModel ?: "Unknown")
+                    socVendor?.let { DeviceInfoRow("SoC vendor", it) }
+                    if (coreCount > 0) {
+                        DeviceInfoRow("CPU", "$coreCount cores · $clusterCount clusters")
+                        DeviceInfoRow(
+                            label = "Layout",
+                            value = state.policies.sortedBy { it.id }
+                                .joinToString(" + ") { it.cpuIds.size.toString() },
+                        )
+                    }
+                    DeviceInfoRow("Android", "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+                    DeviceInfoRow("Codename", Build.DEVICE ?: "—")
+                    DeviceInfoRow("Build", Build.DISPLAY ?: Build.ID ?: "—")
+                }
+
+                if (state.policies.isNotEmpty()) {
+                    Text(
+                        text = "CPU clusters",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        state.policies.sortedBy { it.id }.forEach { policy ->
+                            DeviceInfoRow(
+                                label = "Cluster ${policy.id}",
+                                value = "${formatCpuRange(policy.cpuIds)}  •  up to " +
+                                    formatFrequency(policy.observedMaxFreq),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeviceInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(96.dp),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+private fun formatCpuRange(cpuIds: List<Int>): String {
+    if (cpuIds.isEmpty()) return "—"
+    val sorted = cpuIds.sorted()
+    val contiguous = sorted == (sorted.first()..sorted.last()).toList()
+    return when {
+        sorted.size == 1 -> "cpu${sorted.first()}"
+        contiguous -> "cpu${sorted.first()}–${sorted.last()}"
+        else -> sorted.joinToString(", ") { "cpu$it" }
+    }
+}
+
+private fun socMarketingName(model: String?): String? = when (model?.uppercase()?.trim()) {
+    "SG8350P" -> "Snapdragon G3 Gen 3"
+    else -> null
 }
 
 @Composable

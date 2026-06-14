@@ -67,6 +67,42 @@ class BundledProfileProviderTest {
     }
 
     @Test
+    fun `accepts a profile targeting the hidden turbo bin above the selectable table`() {
+        val turboProvider = BundledProfileProvider(
+            readProfileJson = { "{}" },
+            parseProfiles = {
+                listOf(
+                    PerformanceProfile(
+                        id = "bundled_turbo",
+                        name = "Performance",
+                        // 3302400 is the real hardware max but is NOT in scaling_available_frequencies.
+                        maxFrequencies = mapOf(7 to 3_302_400),
+                        source = ProfileSource.BUNDLED,
+                    ),
+                )
+            },
+            socDetector = fakeSocDetector("SG8350P"),
+        )
+
+        val profiles = turboProvider.createProfiles(
+            listOf(
+                CpuPolicyInfo(
+                    id = 7,
+                    policyPath = "/sys/devices/system/cpu/cpufreq/policy7",
+                    scalingMaxPath = "/sys/devices/system/cpu/cpufreq/policy7/scaling_max_freq",
+                    currentMaxFreq = 3_302_400,
+                    selectableMaxFreq = 3_052_800,
+                    observedMaxFreq = 3_302_400,
+                    minFreq = 480_000,
+                    supportedFrequencies = listOf(2_995_200, 3_052_800),
+                ),
+            ),
+        )
+
+        assertEquals(listOf("Performance"), profiles.map { it.name })
+    }
+
+    @Test
     fun `returns empty when required policies are missing`() {
         val profiles = provider.createProfiles(listOf(policy(id = 2, stockMax = 2_500_000, supported = listOf(800_000, 2_500_000))))
         assertTrue(profiles.isEmpty())

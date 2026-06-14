@@ -1,0 +1,46 @@
+{
+    "schemaVersion": 1,
+    "socModel": "SG8350P",
+    "profiles": [
+        {
+            "id": "bundled_sg8350p_performance",
+            "name": "Performance",
+            "maxFrequencies": {
+                "0": 2265600,
+                "2": 3148800,
+                "5": 2956800,
+                "7": 3052800
+            }
+        },
+        {
+            "id": "bundled_sg8350p_small",
+            "name": "Small Underclock",
+            "maxFrequencies": {
+                "0": 2150400,
+                "2": 2841600,
+                "5": 2630400,
+                "7": 2880000
+            }
+        },
+        {
+            "id": "bundled_sg8350p_medium",
+            "name": "Medium Underclock",
+            "maxFrequencies": {
+                "0": 2035200,
+                "2": 2380800,
+                "5": 2246400,
+                "7": 2438400
+            }
+        },
+        {
+            "id": "bundled_sg8350p_large",
+            "name": "Large Underclock",
+            "maxFrequencies": {
+                "0": 1804800,
+                "2": 1920000,
+                "5": 1824000,
+                "7": 1939200
+            }
+        }
+    ]
+}

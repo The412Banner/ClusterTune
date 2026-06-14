@@ -559,8 +559,25 @@ private fun formatCpuRange(cpuIds: List<Int>): String {
     }
 }
 
+// Marketing names for handheld SoCs, keyed by the model string reported through
+// `ro.soc.model` / `ro.vendor.qti.soc_model` (see [SocDetector]), uppercased and
+// trimmed. Keys are best-effort for the AYN/Retroid devices ClusterTune targets;
+// a key that doesn't match a given device just falls through to null (raw SoC
+// model is still shown), so it can never break the card — correct any that are off.
 private fun socMarketingName(model: String?): String? = when (model?.uppercase()?.trim()) {
-    "SG8350P" -> "Snapdragon G3 Gen 3"
+    // AYANEO
+    "SG8350P" -> "Snapdragon G3 Gen 3"            // Pocket FIT
+
+    // AYN
+    "SM8550" -> "Snapdragon 8 Gen 2"              // Odin 2 / 2 Mini / 2 Portal
+    "SDM845" -> "Snapdragon 845"                  // Odin (1st gen)
+
+    // Retroid
+    "SM8250", "SM8250-AB" -> "Snapdragon 865"     // Pocket 5 / Mini / Flip 2
+    "MT6877", "MT6877V" -> "Dimensity 900"        // Pocket 4 (also AYN Odin Lite)
+    "MT6891", "MT6891Z" -> "Dimensity 1100"       // Pocket 4 Pro / 3+
+    "T618", "UMS512" -> "Unisoc Tiger T618"       // Pocket 3
+
     else -> null
 }
 

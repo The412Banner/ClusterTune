@@ -12,7 +12,7 @@ class RootCommandRunner(
 ) {
 
     val isAvailable: Boolean
-        get() = rootExec.pServerAvailable
+        get() = rootExec.isRootAvailable
 
     suspend fun executeScript(script: String): Result<String?> = withContext(dispatcher) {
         runCatching {

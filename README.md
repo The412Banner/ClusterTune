@@ -12,7 +12,7 @@ ClusterTune is an Android utility for tuning CPU frequency limits on supported h
 
 The app has been tested with the AYN Odin 3, but should be compatible with other AYN and Retroid devices.
 
-ClusterTune does not require Magisk or user-granted root access. It relies on the device's built-in PServer service, where available.
+Upstream, ClusterTune relies solely on the device's built-in PServer service and does not require Magisk or user-granted root. This fork adds a **Magisk `su` fallback** so it also works on rooted handhelds that lack the PServer service (see [Device compatibility](#device-compatibility)).
 
 > [!WARNING]
 > ClusterTune changes CPU frequency limits. This may affect device stability, thermals, battery life, and performance, and I cannot guarantee that it is safe for your hardware or beneficial for your use case. Use it only if you understand what CPU frequency limits do and are comfortable accepting the risk.
@@ -46,7 +46,42 @@ Lower CPU frequency caps can reduce power draw, which may help lower temperature
 ## Requirements
 
 - Android 12+ (`minSdk 31`).
-- A compatible handheld with the PServer service, such as supported AYN and Retroid devices.
+- Privileged access through **either** of:
+  - A compatible handheld with the built-in PServer service, such as supported AYN and Retroid devices (no Magisk needed); **or**
+  - A Magisk-rooted device that can grant `su` to apps (see [Device compatibility](#device-compatibility)).
+
+## Device compatibility
+
+ClusterTune needs privileged (root) access to read and write the protected CPU
+frequency controls under `/sys/devices/system/cpu/.../cpufreq/`. There are two
+ways it can obtain that access:
+
+1. **PServer service (no Magisk).** AYN and Retroid handhelds ship a vendor
+   system service called `PServerBinder` that runs privileged commands on the
+   app's behalf. When it is present, ClusterTune uses it automatically and never
+   prompts for root.
+
+2. **Magisk `su` fallback (this fork).** Devices without the `PServerBinder`
+   service — for example the AYANEO Pocket FIT and other non-AYN/Retroid rooted
+   handhelds — were previously reported as *"not compatible,"* because the app
+   only knew how to talk to PServer. This fork adds a fallback that runs the same
+   commands through a Magisk-style `su` binary when the PServer service is
+   missing.
+
+   On these devices, the **first** privileged action triggers a Magisk
+   Superuser prompt for `com.aure.clustertune` — grant it and ClusterTune works
+   normally. The `su` capability is detected once per app launch and cached.
+
+If neither backend is available, the app reports that the device is not
+compatible.
+
+### Adding your device
+
+If your SoC is not yet bundled, ClusterTune can still tune clusters with the
+per-cluster sliders. To ship a tuned profile, add a JSON file named after the
+detected SoC model under `app/src/main/assets/bundled_profiles/` — see
+[Bundled Profiles](#bundled-profiles). The SG8350P (Snapdragon G3 Gen 3 /
+AYANEO Pocket FIT) is included as an example of a Magisk-only device.
 
 ## Build
 
@@ -121,7 +156,7 @@ Exported profiles follow the same schema.
 ## Notes For Contributors
 
 - UI refers to cpufreq policies as CPU clusters, but internal code keeps `policy` naming because it matches Linux/sysfs terminology.
-- ClusterTune uses the device's PServer service to read and write protected CPU frequency controls. It does not ask the user for root access.
+- ClusterTune uses the device's PServer service to read and write protected CPU frequency controls without asking for root. When PServer is absent, `RootExec` falls back to running the same commands via `su -c` (the `su` probe result is cached process-wide), which does prompt for Magisk Superuser access. `RootExec.isRootAvailable` is true if either backend works.
 
 ## License and Attribution
 
